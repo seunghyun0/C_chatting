@@ -105,7 +105,7 @@ void message(int fd){
       while(1){
           recv(fd,RECV_BUFF,sizeof(RECV_BUFF),0);
           printf("CLIENT : %s\n",RECV_BUFF);
-          sleep(1);
+          
       }
     }
     if(pid_1 == 1){
@@ -113,7 +113,7 @@ void message(int fd){
             printf("SERVER : ");
             scanf("%s",SEND_BUFF);
             send(fd, SEND_BUFF, strlen(SEND_BUFF) + 1, 0);
-            sleep(1);
+
         }
     }
 
