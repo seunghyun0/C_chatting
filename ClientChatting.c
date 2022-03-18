@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 #define BUFFER 512
 
 int a =10;
@@ -13,6 +14,8 @@ int a =10;
 #define SERV_PORT 4000
 
 void message(int fd);
+void *MessageSend(void* fd);
+void *MessageRev(void* fd);
 
 int main(int argc, char *argv[]){
     int sockfd; /*will hold the destination addr */
@@ -84,32 +87,44 @@ int main(int argc, char *argv[]){
         }
         printf("login again\n");
     }
-    while(1){
-        message(sockfd);
-    }
+    
+    message(sockfd);
 
-    close(sockfd);
+    //close(sockfd);
 
     return 0;
 }
 void message(int fd){
-    char RECV_BUFF[BUFFER];
-    char SEND_BUFF[BUFFER];
-    pid_t  pid;   
-    pid = fork();
-    if(pid == 0){
-      while(1){
-          recv(fd,RECV_BUFF,sizeof(RECV_BUFF),0);
-          printf("SERVER : %s\n",RECV_BUFF);
-          
-      }
+    int threadErr;
+    pthread_t SendThread, RevThread;
+    if(threadErr = pthread_create(&SendThread,NULL,MessageSend,(void*)&fd)!=0){
+        printf("Thread ERR = %d",threadErr);
     }
-    if(pid == 1){
-        while(1){
-            printf("CLIENT : ");
-            scanf("%s",SEND_BUFF);
-            send(fd, SEND_BUFF, strlen(SEND_BUFF) + 1, 0);
-        }
+    if(threadErr = pthread_create(&RevThread,NULL,MessageRev,(void*)&fd)!=0){
+        printf("Thread ERR = %d",threadErr);
     }
 
+}
+void *MessageSend(void *fd){
+    int newfd = *((int *)fd);
+    char SEND_BUFF[BUFFER];
+    while(1){
+            printf("Client : ");
+            scanf("%s",SEND_BUFF);
+            send(newfd, SEND_BUFF, strlen(SEND_BUFF) + 1, 0);
+
+        }
+}
+void *MessageRev(void *fd){
+    int newfd = *((int *)fd);
+    char RECV_BUFF[BUFFER];
+    char RECV_BUFF2[BUFFER];
+    while(1){
+        sleep(1);
+          recv(newfd,RECV_BUFF,sizeof(RECV_BUFF),0);
+          if (strcmp(RECV_BUFF,RECV_BUFF2)!=0){
+            printf("Server : %s\n",RECV_BUFF);   
+          }
+          strcpy(RECV_BUFF2,RECV_BUFF); 
+      }
 }

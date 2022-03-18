@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <pthread.h>
 
 #define SERV_IP "127.0.0.1"
 #define SERV_PORT 4000
@@ -24,3 +25,5 @@
 
 void login(int new_fd);
 void message(int fd);
+void *MessageSend(void* fd);
+void *MessageRev(void* fd);

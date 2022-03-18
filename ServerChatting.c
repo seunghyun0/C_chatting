@@ -69,7 +69,7 @@ while(1){
       message(new_fd);
     }
 }
-  close(sockfd);
+  //close(sockfd);
 
   return 0;
   
@@ -97,24 +97,36 @@ void login(int fd){
   }
 }
 void message(int fd){
-    char RECV_BUFF[BUFFER];
-    char SEND_BUFF[BUFFER];
-    pid_t  pid_1;   
-    pid_1 = fork();
-    if(pid_1 == 0){
-      while(1){
-          recv(fd,RECV_BUFF,sizeof(RECV_BUFF),0);
-          printf("CLIENT : %s\n",RECV_BUFF);
-          
-      }
+    int threadErr;
+    pthread_t SendThread, RevThread;
+    if(threadErr = pthread_create(&SendThread,NULL,MessageSend,(void*)&fd)!=0){
+        printf("Thread ERR = %d",threadErr);
     }
-    if(pid_1 == 1){
-        while(1){
+    if(threadErr = pthread_create(&RevThread,NULL,MessageRev,(void*)&fd)!=0){
+        printf("Thread ERR = %d",threadErr);
+    }
+
+}
+void *MessageSend(void *fd){
+    int newfd = *((int *)fd);
+    char SEND_BUFF[BUFFER];
+    while(1){
             printf("SERVER : ");
             scanf("%s",SEND_BUFF);
-            send(fd, SEND_BUFF, strlen(SEND_BUFF) + 1, 0);
+            send(newfd, SEND_BUFF, strlen(SEND_BUFF) + 1, 0);
 
         }
-    }
-
+}
+void *MessageRev(void *fd){
+    int newfd = *((int *)fd);
+    char RECV_BUFF[BUFFER];
+    char RECV_BUFF2[BUFFER];
+    while(1){
+        sleep(1);
+          recv(newfd,RECV_BUFF,sizeof(RECV_BUFF),0);
+          if (strcmp(RECV_BUFF,RECV_BUFF2)!=0){
+            printf("CLIENT : %s\n",RECV_BUFF);   
+          }
+          strcpy(RECV_BUFF2,RECV_BUFF); 
+      }
 }
