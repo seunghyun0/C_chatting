@@ -122,13 +122,8 @@ void *MessageSend(void *fd){
 void *MessageRev(void *fd){
     int newfd = *((int *)fd);
     char RECV_BUFF[BUFFER];
-    char RECV_BUFF2[BUFFER];
     while(1){
-
-          recv(newfd,RECV_BUFF,sizeof(RECV_BUFF),0);
-          if (strcmp(RECV_BUFF,RECV_BUFF2)!=0){
-            printf("Server : %s\n",RECV_BUFF);   
-          }
-          strcpy(RECV_BUFF2,RECV_BUFF); 
-      }
+        recv(newfd,RECV_BUFF,sizeof(RECV_BUFF),0);
+        printf("%s\n",RECV_BUFF);   
+    }
 }

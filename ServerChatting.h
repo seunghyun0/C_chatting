@@ -23,7 +23,14 @@
 #define USER2_ID "user2"
 #define USER2_PW "passwd2"
 
+#define _CRT_SECURE_NO_WARNINGS
+
 void login(int new_fd);
-void message(int fd);
-void *MessageSend(void* fd);
-void *MessageRev(void* fd);
+void message();
+char* MessageRev(int fd);
+void MessageSend(int fd,char* Send);
+
+typedef struct sendThread{
+    int fd1;
+    int fd2;
+}sendThread;

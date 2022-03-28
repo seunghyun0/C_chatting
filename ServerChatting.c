@@ -1,19 +1,19 @@
 #include "ServerChatting.h"
+int user_fd[10] = {0,};
 int main (void){
   /*listen on sock_fd, new connection on new_fd*/
-  int sockfd, new_fd;
+  int sockfd;
   /*my address information, address where I run this program*/
   struct sockaddr_in my_addr;
   /*remote address information */
   struct sockaddr_in their_addr;
   unsigned int sin_size;
-  
   /* bufffer */
   int rcv_byte;
-
   int val = 1;
-
-  pid_t  pid;
+  char *SendBuffer;
+  pid_t pid;
+  int new_fd;
   /* socket */
 
   sockfd = socket(AF_INET,SOCK_STREAM,0);//소켓 생성
@@ -22,7 +22,6 @@ int main (void){
     exit(1);
   }
   else printf("Server-socket() sockfd is OK...\n");
-  
   /*host byte order*/
   my_addr.sin_family = AF_INET;
 
@@ -38,15 +37,15 @@ int main (void){
 
   /*to prevent 'Address already in use...'*/
   if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char*)&val, sizeof(val))<0){
-    //setsockopt()함수를 통하여 소켓의 송수신 동작을 다양한 옵션으로 제어 할 수 있다
-    perror("setsockopt");
-    close(sockfd);
-    return -1;
-  }
+  //setsockopt()함수를 통하여 소켓의 송수신 동작을 다양한 옵션으로 제어 할 수 있다
+  perror("setsockopt");
+  close(sockfd);
+  return -1;
+}
 
   /*bind*/
   if(bind(sockfd, (struct sockaddr *)&my_addr, sizeof(struct sockaddr)) == -1){
-    //bind 함수는 소켓에 서버 소켓에 필요한 정보를 할당하고 커널에 등록하는 함수입니다.
+  //bind 함수는 소켓에 서버 소켓에 필요한 정보를 할당하고 커널에 등록하는 함수입니다.
     perror("Server-bind() error lol!");
     exit(1);
   }
@@ -54,83 +53,66 @@ int main (void){
 
   /*listen*/
   if(listen(sockfd, BACKLOG) == -1){
-    //listen함수는 연결 요청을 할 수 있는 상태로 만들어주는 함수 이다
+  //listen함수는 연결 요청을 할 수 있는 상태로 만들어주는 함수 이다
 
-    perror("listen() error lol!");
-    exit(1);
-  }
+  perror("listen() error lol!");
+  exit(1);
+}
   else printf("listen() is OK...\n\n");
-while(1){
-  sin_size = sizeof(struct sockaddr_in);
-  new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+  while(1){
+    sin_size = sizeof(struct sockaddr_in);
+    new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+    int user_num;
+    for(int i = 0;i <10; i++){
+      if(user_fd[i] == 0){
+        user_fd[i] = new_fd;
+        user_num = i;
+        break;
+      }
+    }
     pid = fork();
     if(pid == 0){
       login(new_fd);
-    }
+      while(1){
+        char RECV_BUFF[BUFFER];
+        recv(new_fd,RECV_BUFF,sizeof(RECV_BUFF),0);
+        printf("%s\n",RECV_BUFF);
+        char user_ID[BUFFER] = "USER";
+        char ID = '0' + user_num;
+        user_ID[4] = ID;
+        strcat(user_ID," : ");
+        strcat(user_ID,RECV_BUFF);
+        for(int j = 0; j < 10; j++){
+          if(user_fd[j] != new_fd){
+            send(user_fd[j], user_ID, strlen(user_ID) + 1, 0);
+          }
+        }
+      } 
+  }
 }
-  //close(sockfd);
+//close(sockfd);
 
   return 0;
-  
 }
 void login(int fd){
   char id[LOGIN_BUFFER];
   char pw[LOGIN_BUFFER];
   int new_fd = fd;
   send(new_fd, INIT_MSG, strlen(INIT_MSG) + 1, 0);
-    //연결된 서버나 클라이언트로 데이터를 전송한다
-    while(1){  
-      recv(new_fd,id,sizeof(id),0);
-      recv(new_fd,pw,sizeof(pw),0);
-      if(strcmp(id,USER1_ID) == 0 && strcmp(pw,USER1_PW)==0){
-          printf("log-in success\n");
-          send(new_fd, "log-in", strlen("log-in") + 1, 0);
-          message(new_fd);
-          break;
-         }
-      else if(strcmp(id,USER2_ID) == 0&&strcmp(pw,USER2_PW)==0){
-          printf("log-in success\n");
-          send(new_fd, "log-in", strlen("log-in") + 1, 0);
-          message(new_fd);
-          break;
-         }    
-      send(new_fd, "login again", strlen("login again") + 1, 0);
+  //연결된 서버나 클라이언트로 데이터를 전송한다
+  while(1){ 
+    recv(new_fd,id,sizeof(id),0);
+    recv(new_fd,pw,sizeof(pw),0);
+    if(strcmp(id,USER1_ID) == 0 && strcmp(pw,USER1_PW)==0){
+      printf("log-in success\n");
+      send(new_fd, "log-in", strlen("log-in") + 1, 0);
+      break;
+    }
+  else if(strcmp(id,USER2_ID) == 0&&strcmp(pw,USER2_PW)==0){
+    printf("log-in success\n");
+    send(new_fd, "log-in", strlen("log-in") + 1, 0);
+    break;
+  } 
+  send(new_fd, "login again", strlen("login again") + 1, 0);
   }
-}
-void message(int fd){
-    int status;
-    int threadErr;
-    pthread_t SendThread, RevThread;
-    printf("채팅 시작! 대화내용을 입력해주세요!\n");
-    if(threadErr = pthread_create(&SendThread,NULL,MessageSend,(void*)&fd)!=0){
-        printf("Thread ERR = %d",threadErr);
-    }
-    if(threadErr = pthread_create(&RevThread,NULL,MessageRev,(void*)&fd)!=0){
-        printf("Thread ERR = %d",threadErr);
-    }
-    pthread_join(SendThread, (void **)&status);
-    pthread_join(RevThread, (void **)&status);
-
-}
-void *MessageSend(void *fd){
-    int newfd = *((int *)fd);
-    char SEND_BUFF[BUFFER];
-    while(1){
-            scanf("%s",SEND_BUFF);
-            send(newfd, SEND_BUFF, strlen(SEND_BUFF) + 1, 0);
-
-        }
-}
-void *MessageRev(void *fd){
-    int newfd = *((int *)fd);
-    char RECV_BUFF[BUFFER];
-    char RECV_BUFF2[BUFFER];
-    while(1){
-
-          recv(newfd,RECV_BUFF,sizeof(RECV_BUFF),0);
-          if (strcmp(RECV_BUFF,RECV_BUFF2)!=0){
-            printf("Client : %s\n",RECV_BUFF);   
-          }
-          strcpy(RECV_BUFF2,RECV_BUFF); 
-      }
 }
