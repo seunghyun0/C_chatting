@@ -59,6 +59,7 @@ int main (void){
   exit(1);
 }
   else printf("listen() is OK...\n\n");
+  
   while(1){
     sin_size = sizeof(struct sockaddr_in);
     new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
@@ -73,24 +74,19 @@ int main (void){
     pid = fork();
     if(pid == 0){
       login(new_fd);
+     /*
       while(1){
         char RECV_BUFF[BUFFER];
         recv(new_fd,RECV_BUFF,sizeof(RECV_BUFF),0);
         printf("%s\n",RECV_BUFF);
-        char user_ID[BUFFER] = "USER";
-        char ID = '0' + user_num;
-        user_ID[4] = ID;
-        strcat(user_ID," : ");
-        strcat(user_ID,RECV_BUFF);
-        for(int j = 0; j < 10; j++){
-          if(user_fd[j] != new_fd){
-            send(user_fd[j], user_ID, strlen(user_ID) + 1, 0);
-          }
-        }
-      } 
-  }
+      }
+      */
+     char RECV_BUFF[BUFFER];
+     recv(new_fd,RECV_BUFF,sizeof(RECV_BUFF),0);
+      printf("%s\n",RECV_BUFF);
+   }
 }
-//close(sockfd);
+close(sockfd);
 
   return 0;
 }
@@ -114,5 +110,17 @@ void login(int fd){
     break;
   } 
   send(new_fd, "login again", strlen("login again") + 1, 0);
+  }
+}
+void sendChatting(int fd,int user_num, char *rev){
+  char user_ID[BUFFER] = "USER";
+  char ID = '0' + user_num;
+  user_ID[4] = ID;
+  strcat(user_ID," : ");
+  strcat(user_ID,rev);
+  for(int j = 0; j < 10; j++){
+    if(user_fd[j] != fd){
+      send(user_fd[j], user_ID, strlen(user_ID) + 1, 0);
+    }
   }
 }
