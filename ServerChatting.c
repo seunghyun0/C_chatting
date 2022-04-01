@@ -12,7 +12,6 @@ int main (void){
   int rcv_byte;
   int val = 1;
   char *SendBuffer;
-  pid_t pid;
   int new_fd;
   /* socket */
 
@@ -59,41 +58,33 @@ int main (void){
   exit(1);
 }
   else printf("listen() is OK...\n\n");
-  
+
   while(1){
     sin_size = sizeof(struct sockaddr_in);
     new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
-    int user_num;
+    int status;
+    int threadErr;
+    pthread_t LoginThread,RecvThread;
+    int result;
     for(int i = 0;i <10; i++){
       if(user_fd[i] == 0){
         user_fd[i] = new_fd;
-        user_num = i;
         break;
       }
     }
-    pid = fork();
-    if(pid == 0){
-      login(new_fd);
-     /*
-      while(1){
-        char RECV_BUFF[BUFFER];
-        recv(new_fd,RECV_BUFF,sizeof(RECV_BUFF),0);
-        printf("%s\n",RECV_BUFF);
-      }
-      */
-     char RECV_BUFF[BUFFER];
-     recv(new_fd,RECV_BUFF,sizeof(RECV_BUFF),0);
-      printf("%s\n",RECV_BUFF);
-   }
-}
+    if(threadErr = pthread_create(&LoginThread,NULL,login,(void*)&new_fd)!=0){
+        printf("Thread ERR = %d",threadErr);
+    }
+    pthread_join(LoginThread,NULL);
+  }
 close(sockfd);
 
   return 0;
 }
-void login(int fd){
+void *login(void* fd){
+  int new_fd = *((int *)fd);
   char id[LOGIN_BUFFER];
   char pw[LOGIN_BUFFER];
-  int new_fd = fd;
   send(new_fd, INIT_MSG, strlen(INIT_MSG) + 1, 0);
   //연결된 서버나 클라이언트로 데이터를 전송한다
   while(1){ 
@@ -102,25 +93,34 @@ void login(int fd){
     if(strcmp(id,USER1_ID) == 0 && strcmp(pw,USER1_PW)==0){
       printf("log-in success\n");
       send(new_fd, "log-in", strlen("log-in") + 1, 0);
+      RecvChatting(new_fd);
       break;
     }
   else if(strcmp(id,USER2_ID) == 0&&strcmp(pw,USER2_PW)==0){
     printf("log-in success\n");
     send(new_fd, "log-in", strlen("log-in") + 1, 0);
+    RecvChatting(new_fd);
     break;
   } 
   send(new_fd, "login again", strlen("login again") + 1, 0);
   }
 }
-void sendChatting(int fd,int user_num, char *rev){
-  char user_ID[BUFFER] = "USER";
-  char ID = '0' + user_num;
-  user_ID[4] = ID;
-  strcat(user_ID," : ");
-  strcat(user_ID,rev);
-  for(int j = 0; j < 10; j++){
-    if(user_fd[j] != fd){
-      send(user_fd[j], user_ID, strlen(user_ID) + 1, 0);
+void RecvChatting(int new_fd){
+  int userNum ;
+  char user_Num;
+  char RECV_BUFF[BUFFER];
+  for(int i = 0;i<10;i++)if(new_fd == user_fd[i])userNum = i;
+  while(1){
+    char USER_ID[BUFFER] = "USER";
+    user_Num = '0' + userNum;
+    strcat(USER_ID,&user_Num);
+    strcat(USER_ID," : ");
+    recv(new_fd,RECV_BUFF,sizeof(RECV_BUFF),0);
+    strcat(USER_ID,RECV_BUFF);
+    for(int i=0;i<10;i++){
+      if(new_fd != user_fd[i]){
+        send(user_fd[i], USER_ID, strlen(USER_ID) + 1, 0);
+      }
     }
   }
 }

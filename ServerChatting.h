@@ -25,8 +25,8 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-void login(int new_fd);
-void sendChatting(int fd,int user_num, char *rev);
+void *login(void* fd);
+void RecvChatting(int fd);
 
 typedef struct sendThread{
     int fd1;
