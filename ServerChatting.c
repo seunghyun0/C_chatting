@@ -75,7 +75,6 @@ int main (void){
     if(threadErr = pthread_create(&LoginThread,NULL,login,(void*)&new_fd)!=0){
         printf("Thread ERR = %d",threadErr);
     }
-    pthread_join(LoginThread,NULL);
   }
 close(sockfd);
 
@@ -106,7 +105,7 @@ void *login(void* fd){
   }
 }
 void RecvChatting(int new_fd){
-  int userNum ;
+  int userNum, Socket_Status ;
   char user_Num;
   char RECV_BUFF[BUFFER];
   for(int i = 0;i<10;i++)if(new_fd == user_fd[i])userNum = i;
@@ -115,10 +114,14 @@ void RecvChatting(int new_fd){
     user_Num = '0' + userNum;
     strcat(USER_ID,&user_Num);
     strcat(USER_ID," : ");
-    recv(new_fd,RECV_BUFF,sizeof(RECV_BUFF),0);
+    Socket_Status = recv(new_fd,RECV_BUFF,sizeof(RECV_BUFF),0);
+    if(Socket_Status < 1){
+      user_fd[userNum] = 0;
+      break;
+    }
     strcat(USER_ID,RECV_BUFF);
     for(int i=0;i<10;i++){
-      if(new_fd != user_fd[i]){
+      if(new_fd != user_fd[i] && new_fd != 0){
         send(user_fd[i], USER_ID, strlen(USER_ID) + 1, 0);
       }
     }
