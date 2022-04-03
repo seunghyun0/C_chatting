@@ -91,7 +91,7 @@ int main(int argc, char *argv[]){
     
     
 
-    //close(sockfd);
+    close(sockfd);
 
     return 0;
 }
@@ -108,27 +108,21 @@ void message(int fd){
     }
     pthread_join(SendThread, (void **)&status);
     pthread_join(RevThread, (void **)&status);
-
 }
 void *MessageSend(void *fd){
     int newfd = *((int *)fd);
     char SEND_BUFF[BUFFER];
     while(1){
             scanf("%s",SEND_BUFF);
+            if(strcmp(SEND_BUFF, "stop") == 0)exit(0);
             send(newfd, SEND_BUFF, strlen(SEND_BUFF) + 1, 0);
-
         }
 }
 void *MessageRev(void *fd){
     int newfd = *((int *)fd);
     char RECV_BUFF[BUFFER];
-    char RECV_BUFF2[BUFFER];
     while(1){
-
-          recv(newfd,RECV_BUFF,sizeof(RECV_BUFF),0);
-          if (strcmp(RECV_BUFF,RECV_BUFF2)!=0){
-            printf("Server : %s\n",RECV_BUFF);   
-          }
-          strcpy(RECV_BUFF2,RECV_BUFF); 
-      }
+        recv(newfd,RECV_BUFF,sizeof(RECV_BUFF),0);
+        printf("%s\n",RECV_BUFF);   
+    }
 }
